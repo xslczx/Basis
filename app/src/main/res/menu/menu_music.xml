@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <group
+        android:id="@+id/lock"
+        android:visible="false">
+        <item
+            android:id="@+id/action_lock"
+            android:icon="@android:drawable/ic_lock_idle_lock"
+            android:orderInCategory="10"
+            android:title="lock"
+            app:showAsAction="always" />
+    </group>
+
+    <group android:id="@+id/not_lock">
+        <item
+            android:id="@+id/action_play_single"
+            android:icon="@android:drawable/ic_menu_sort_alphabetically"
+            android:orderInCategory="101"
+            android:title="单曲循环"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/action_play_shuffle"
+            android:icon="@android:drawable/ic_menu_today"
+            android:orderInCategory="102"
+            android:title="随机播放"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/action_play_oder"
+            android:icon="@android:drawable/ic_menu_month"
+            android:orderInCategory="102"
+            android:title="列表顺序"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/action_play_cycle"
+            android:icon="@android:drawable/ic_menu_week"
+            android:orderInCategory="102"
+            android:title="列表循环"
+            app:showAsAction="never" />
+    </group>
+
+</menu>

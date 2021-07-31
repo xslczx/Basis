@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorAccent">#26A69A</color>
+
+    <color name="colorListDivider">#666666</color>
+    <color name="colorChipBackground">#212121</color>
+    <color name="colorChipBorder">#666666</color>
+</resources>
