@@ -1,16 +1,16 @@
 package com.xslczx.basis.sample.ui.music
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.*
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.Picasso
-import com.xslczx.basis.android.HandlerUtils
 import com.xslczx.basis.android.LogUtils
+import com.xslczx.basis.android.SizeUtils
 import com.xslczx.basis.android.player.BasisMediaManager
 import com.xslczx.basis.java.JsonUtils
 import com.xslczx.basis.java.timer.BasisTimer
@@ -20,6 +20,7 @@ import com.xslczx.basis.sample.MainActivity
 import com.xslczx.basis.sample.Music
 import com.xslczx.basis.sample.R
 import com.xslczx.basis.sample.adapter.SelectMode
+import com.xslczx.basis.sample.adapter.SpaceItemDecoration
 import com.xslczx.basis.sample.databinding.FragmentMusicBinding
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -27,12 +28,14 @@ import org.json.JSONObject
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
+
 class MusicFragment : Fragment() {
 
     private lateinit var viewBinding: FragmentMusicBinding
     private val listIterator = mutableListOf<Music>()
     private var currentPosition = 0
     private var mBanned = false
+    private var currentMusic: Music? = null
     private val musicAdapter by lazy(LazyThreadSafetyMode.NONE) { MusicAdapter() }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         arguments?.let {
@@ -92,12 +95,15 @@ class MusicFragment : Fragment() {
                 BasisMediaManager.getInstance().pause()
             } ?: let {
                 viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_pause)
-                BasisMediaManager.getInstance().resume()
+                currentMusic?.takeIf { BasisMediaManager.getInstance().isNullMediaPlayer }
+                    ?.let {
+                        playMusic(it)
+                    } ?: BasisMediaManager.getInstance().resume()
             }
         }
         viewBinding.recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         viewBinding.recyclerView.adapter = musicAdapter
-        viewBinding.recyclerView.addItemDecoration(DividerItemDecoration(mActivity, DividerItemDecoration.VERTICAL))
+        viewBinding.recyclerView.addItemDecoration(SpaceItemDecoration(SizeUtils.dp2px(10f), Color.TRANSPARENT))
         musicAdapter.selectMode = SelectMode.SINGLE_SELECT
         musicAdapter.setOnItemSingleSelectListener { layoutPosition, isSelected ->
             currentPosition = layoutPosition
@@ -115,7 +121,6 @@ class MusicFragment : Fragment() {
                 }
 
                 override fun onCompletion() {
-                    listIterator.shuffle()
                     viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_play)
                     nextMusic()?.let { playMusic(it) }
                 }
@@ -132,6 +137,7 @@ class MusicFragment : Fragment() {
                 override fun onError(what: Int, extra: Int): Boolean {
                     val ignoreWhat = BasisMediaManager.isIgnoreWhat(what)
                     if (!ignoreWhat) {
+                        LogUtils.w("onError:$what,extra:$extra")
                     }
                     return false
                 }
@@ -157,12 +163,6 @@ class MusicFragment : Fragment() {
             loadMusic("飙升榜")?.let {
                 list.add(it)
             }
-            loadMusic("抖音榜")?.let {
-                list.add(it)
-            }
-            loadMusic("电音榜")?.let {
-                list.add(it)
-            }
             list
         }, AppExecutors.io).thenApplyAsync({
             listIterator.clear()
@@ -173,7 +173,23 @@ class MusicFragment : Fragment() {
                 musicAdapter.setNewData(t)
                 musicAdapter.setSelected(-1)
                 viewBinding.progressCircle.hide()
+                listIterator.getOrNull(0)?.let {
+                    refreshState(it)
+                }
             }, AppExecutors.main)
+    }
+
+    private fun refreshState(music: Music) {
+        currentMusic = music
+        music.applyColor(activity)
+        Picasso.get().load(music.pic).into(viewBinding.ivMusicAlbum)
+        viewBinding.tvMusicTitle.text = "当前播放：${music.title}-${music.author}"
+        nextMusic()?.let {
+            viewBinding.tvMusicTips.text = "下一曲：${it.title}"
+            it.preloadColor()
+        } ?: let {
+            viewBinding.tvMusicTips.text = "没有下一曲了"
+        }
     }
 
     private fun loadMusic(sort: String? = "热歌榜"): Music? {
@@ -250,14 +266,7 @@ class MusicFragment : Fragment() {
     }
 
     private fun playMusic(music: Music) {
-        if (!HandlerUtils.isMainThread()) return
-        Picasso.get().load(music.pic).into(viewBinding.ivMusicAlbum)
-        viewBinding.tvMusicTitle.text = "当前播放：${music.title}-${music.author}"
-        nextMusic()?.let {
-            viewBinding.tvMusicTips.text = "下一曲：${it.title}"
-        } ?: let {
-            viewBinding.tvMusicTips.text = "没有下一曲了"
-        }
+        refreshState(music)
         BasisMediaManager.getInstance()
             .playPrepare(
                 music.url, false
@@ -304,6 +313,11 @@ class MusicFragment : Fragment() {
             }
         }
         return false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        currentMusic?.applyColor(activity)
     }
 
     override fun onDestroy() {

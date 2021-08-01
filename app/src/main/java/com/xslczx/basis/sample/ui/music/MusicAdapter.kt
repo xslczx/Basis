@@ -23,7 +23,7 @@ class MusicAdapter : BaseQuickAdapter<Music, BaseViewHolder>() {
             .setImageResource(
                 R.id.i_iv_selected, if (isSelected(position)) android.R.drawable.radiobutton_on_background
                 else android.R.drawable.radiobutton_off_background
-            )
+            ).setGone(R.id.i_iv_selected, true)
         Picasso.get()
             .load(t.pic)
             .resize(SizeUtils.dp2px(100f), SizeUtils.dp2px(100f))

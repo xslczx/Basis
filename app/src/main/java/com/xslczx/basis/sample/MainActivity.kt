@@ -1,9 +1,13 @@
 package com.xslczx.basis.sample
 
+import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.xslczx.basis.sample.databinding.ActivityMainBinding
 import com.xslczx.basis.sample.ui.music.MusicFragment
 
@@ -22,12 +26,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
-        setSupportActionBar(findViewById(R.id.toolbar))
+        val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
+        setSupportActionBar(toolbar)
+        setToolbarColor(Color.BLACK, Color.WHITE)
         val fragment: Fragment = MainFragment()
         supportFragmentManager.beginTransaction()
             .replace(R.id.contentFragment, fragment, FRAGMENT_MAIN)
             .setPrimaryNavigationFragment(fragment)
             .commit()
+    }
+
+    fun setToolbarColor(colorDark: Int, titleTextColor: Int) {
+        val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
+        window.statusBarColor = colorDark
+        window.navigationBarColor = colorDark
+        toolbar.setBackgroundColor(colorDark)
+        toolbar.setTitleTextColor(titleTextColor)
+        ToolbarColorizeHelper.colorizeToolbar(toolbar, titleTextColor, this)
     }
 
     override fun onResume() {

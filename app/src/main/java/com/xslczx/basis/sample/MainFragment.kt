@@ -1,11 +1,13 @@
 package com.xslczx.basis.sample
 
 import android.Manifest
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.xslczx.basis.sample.databinding.FragmentMainBinding
 
@@ -21,10 +23,6 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mActivity = activity as? AppCompatActivity ?: return
-        mActivity.supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(false)
-            setTitle(R.string.app_name)
-        }
         viewBinding.btnMusic.setOnClickListener {
             with((mActivity as? MainActivity)) {
                 val args = Bundle().also { bundle ->
@@ -47,5 +45,16 @@ class MainFragment : Fragment() {
                 }
 
             }).request(mActivity)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val mActivity = activity as? MainActivity ?: return
+        val toolbar = mActivity.findViewById<View>(R.id.toolbar) as Toolbar
+        mActivity.supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(false)
+            toolbar.setTitle(R.string.app_name)
+        }
+        mActivity.setToolbarColor(Color.BLACK, Color.WHITE)
     }
 }
