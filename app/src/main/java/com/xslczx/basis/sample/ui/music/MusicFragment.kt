@@ -1,6 +1,7 @@
 package com.xslczx.basis.sample.ui.music
 
 import android.graphics.Color
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.*
 import android.widget.SeekBar
@@ -10,11 +11,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.Picasso
 import com.xslczx.basis.android.LogUtils
+import com.xslczx.basis.android.PlayerManager
 import com.xslczx.basis.android.SizeUtils
-import com.xslczx.basis.android.player.BasisMediaManager
 import com.xslczx.basis.java.JsonUtils
-import com.xslczx.basis.java.timer.BasisTimer
-import com.xslczx.basis.java.timer.TimerManager
 import com.xslczx.basis.sample.AppExecutors
 import com.xslczx.basis.sample.MainActivity
 import com.xslczx.basis.sample.Music
@@ -37,6 +36,7 @@ class MusicFragment : Fragment() {
     private var mBanned = false
     private var currentMusic: Music? = null
     private val musicAdapter by lazy(LazyThreadSafetyMode.NONE) { MusicAdapter() }
+    private val playerManager by lazy(LazyThreadSafetyMode.NONE) { PlayerManager() }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         arguments?.let {
             mBanned = it.getBoolean(MainActivity.FRAGMENT_BANNED, false)
@@ -58,7 +58,9 @@ class MusicFragment : Fragment() {
         }
         viewBinding.progressCircular.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-
+                takeIf { fromUser }?.let {
+                    playerManager.seekTo(100 * playerManager.duration / progress)
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -66,12 +68,8 @@ class MusicFragment : Fragment() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                val progress = seekBar?.progress ?: 0
-                BasisMediaManager.getInstance().mediaPlayer.pause()
-                BasisMediaManager.getInstance().mediaPlayer.seekTo(progress)
-                BasisMediaManager.getInstance().mediaPlayer.start()
-            }
 
+            }
         })
         viewBinding.btnMusicPrevious.setOnClickListener {
             previousMusic()?.let {
@@ -88,17 +86,16 @@ class MusicFragment : Fragment() {
             }
         }
         viewBinding.btnMusicPlay.setOnClickListener {
-            val playing = BasisMediaManager.getInstance()
-                .isPlaying
+            val playing = playerManager.isPlaying
             takeIf { playing }?.let {
                 viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_play)
-                BasisMediaManager.getInstance().pause()
+                playerManager.pause()
             } ?: let {
                 viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_pause)
-                currentMusic?.takeIf { BasisMediaManager.getInstance().isNullMediaPlayer }
+                currentMusic?.takeUnless { playerManager.isRunning }
                     ?.let {
                         playMusic(it)
-                    } ?: BasisMediaManager.getInstance().resume()
+                    } ?: playerManager.resume()
             }
         }
         viewBinding.recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
@@ -112,41 +109,60 @@ class MusicFragment : Fragment() {
                     playMusic(it)
                 }
         }
-        BasisMediaManager.getInstance()
-            .setMediaListener(object : BasisMediaManager.MediaListener {
-                override fun onPrepared() {
-                    viewBinding.progressCircular.max = BasisMediaManager.getInstance().duration
-                    BasisMediaManager.getInstance().mediaPlayer.start()
-                    viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_pause)
-                }
+        playerManager.setOnPlayStateListener(object : PlayerManager.OnPlayStateListenerImpl() {
+            override fun onPrepared() {
+                super.onPrepared()
+                LogUtils.d("onPrepared")
+                viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_pause)
+            }
 
-                override fun onCompletion() {
-                    viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_play)
-                    nextMusic()?.let { playMusic(it) }
-                }
+            override fun onStarted() {
+                super.onStarted()
+                LogUtils.d("onStarted")
+                viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_pause)
+            }
 
-                override fun onBufferingUpdate(percent: Int) {
-                    val progress = BasisMediaManager.getInstance().duration * percent / 100
-                    viewBinding.progressCircular.secondaryProgress = progress
-                }
+            override fun onPaused() {
+                super.onPaused()
+                LogUtils.d("onPaused")
+                viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_play)
+            }
 
-                override fun onSeekComplete() {
-                    BasisMediaManager.getInstance().mediaPlayer.start()
-                }
+            override fun onReset() {
+                super.onReset()
+                LogUtils.d("onReset")
+            }
 
-                override fun onError(what: Int, extra: Int): Boolean {
-                    val ignoreWhat = BasisMediaManager.isIgnoreWhat(what)
-                    if (!ignoreWhat) {
-                        LogUtils.w("onError:$what,extra:$extra")
-                    }
-                    return false
-                }
+            override fun onStopped() {
+                super.onStopped()
+                LogUtils.d("onStopped")
+                viewBinding.btnMusicPlay.setImageResource(android.R.drawable.ic_media_play)
+            }
+        })
+        playerManager.setOnPlayInfoListener(object : PlayerManager.OnPlayInfoListenerImpl() {
+            override fun onCompletion(mediaPlayer: MediaPlayer?) {
+                super.onCompletion(mediaPlayer)
+                LogUtils.d("onCompletion")
+                nextMusic()?.let { playMusic(it) }
+            }
 
-                override fun onVideoSizeChanged(width: Int, height: Int) {
+            override fun onBufferingUpdate(mediaPlayer: MediaPlayer?, progress: Int) {
+                super.onBufferingUpdate(mediaPlayer, progress)
+                LogUtils.d("onBufferingUpdate:$progress")
+                viewBinding.progressCircular.secondaryProgress = progress
+            }
 
-                }
+            override fun onPlayProgress(progress: Int) {
+                super.onPlayProgress(progress)
+                LogUtils.d("onPlayProgress:$progress")
+                viewBinding.progressCircular.progress = progress
+            }
 
-            })
+            override fun onError(mp: MediaPlayer?, what: Int, extra: Int) {
+                super.onError(mp, what, extra)
+                LogUtils.d("onError:$what,$extra")
+            }
+        })
         loadData()
     }
 
@@ -267,30 +283,10 @@ class MusicFragment : Fragment() {
 
     private fun playMusic(music: Music) {
         refreshState(music)
-        BasisMediaManager.getInstance()
-            .playPrepare(
-                music.url, false
-            )
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        BasisTimer.Builder(500, 1000)
-            .setTag("play_progress")
-            .build()
-            .setCallback { timer, number, end, infinite ->
-                if (BasisMediaManager.getInstance().isPlaying) {
-                    val currentPosition = BasisMediaManager.getInstance()
-                        .currentPosition
-                    viewBinding.progressCircular.progress = currentPosition
-                }
-            }
+        playerManager.setPlayUrl(music.url)
+            .setLooping(false)
+            .setScreenOnWhilePlaying(true)
             .start()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        TimerManager.getTimer("play_progress").stop()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -322,6 +318,6 @@ class MusicFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        BasisMediaManager.getInstance().stop()
+        playerManager.release()
     }
 }

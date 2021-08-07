@@ -5,83 +5,11 @@ import com.xslczx.basis.java.StringUtils;
 import java.util.*;
 
 /**
- * 颜色工具类 ( 包括常用的色值 )
+ * 颜色工具类
  *
- * <pre>
- *     颜色信息和转换工具
- *     @see <a href="https://zh.spycolor.com"/>
- *     RGB 颜色空间、色调、饱和度、亮度、HSV 颜色空间详解
- *     @see <a href="https://blog.csdn.net/bjbz_cxy/article/details/79701006"/>
- * </pre>
  */
 public final class ColorUtils {
 
-    // 透明
-    public static final int TRANSPARENT = 0x00000000;
-    // 白色
-    public static final int WHITE = 0xffffffff;
-    // 白色 ( 半透明 )
-    public static final int WHITE_TRANSLUCENT = 0x80ffffff;
-    // 黑色
-    public static final int BLACK = 0xff000000;
-    // 黑色 ( 半透明 )
-    public static final int BLACK_TRANSLUCENT = 0x80000000;
-    // 红色
-    public static final int RED = 0xffff0000;
-    // 红色 ( 半透明 )
-    public static final int RED_TRANSLUCENT = 0x80ff0000;
-    // 绿色
-    public static final int GREEN = 0xff00ff00;
-    // 绿色 ( 半透明 )
-    public static final int GREEN_TRANSLUCENT = 0x8000ff00;
-    // 蓝色
-    public static final int BLUE = 0xff0000ff;
-    // 蓝色 ( 半透明 )
-    public static final int BLUE_TRANSLUCENT = 0x800000ff;
-    // 灰色
-    public static final int GRAY = 0xff969696;
-    // 灰色 ( 半透明 )
-    public static final int GRAY_TRANSLUCENT = 0x80969696;
-    // 天蓝
-    public static final int SKYBLUE = 0xff87ceeb;
-    // 橙色
-    public static final int ORANGE = 0xffffa500;
-    // 金色
-    public static final int GOLD = 0xffffd700;
-    // 粉色
-    public static final int PINK = 0xffffc0cb;
-    // 紫红色
-    public static final int FUCHSIA = 0xffff00ff;
-    // 灰白色
-    public static final int GRAYWHITE = 0xfff2f2f2;
-    // 紫色
-    public static final int PURPLE = 0xff800080;
-    // 青色
-    public static final int CYAN = 0xff00ffff;
-    // 黄色
-    public static final int YELLOW = 0xffffff00;
-    // 巧克力色
-    public static final int CHOCOLATE = 0xffd2691e;
-    // 番茄色
-    public static final int TOMATO = 0xffff6347;
-    // 橙红色
-    public static final int ORANGERED = 0xffff4500;
-    // 银白色
-    public static final int SILVER = 0xffc0c0c0;
-    // 深灰色
-    public static final int DKGRAY = 0xFF444444;
-    // 亮灰色
-    public static final int LTGRAY = 0xFFCCCCCC;
-    // 洋红色
-    public static final int MAGENTA = 0xFFFF00FF;
-    // 高光
-    public static final int HIGHLIGHT = 0x33ffffff;
-    // 低光
-    public static final int LOWLIGHT = 0x33000000;
-    // 日志 TAG
-    private static final String TAG = ColorUtils.class.getSimpleName();
-    // 颜色字典集合
-    private static final Map<String, Integer> sColorNameMaps;
     // 内部解析器
     private static ColorInfo.Parser sParser;
 
@@ -98,44 +26,6 @@ public final class ColorUtils {
     static {
         // 设置 Color 解析器
         setParser(new ColorInfo.ColorParser());
-    }
-
-
-    static {
-        sColorNameMaps = new HashMap<>();
-        sColorNameMaps.put("transparent", TRANSPARENT);
-        sColorNameMaps.put("white", WHITE);
-        sColorNameMaps.put("black", BLACK);
-        sColorNameMaps.put("red", RED);
-        sColorNameMaps.put("green", GREEN);
-        sColorNameMaps.put("blue", BLUE);
-        sColorNameMaps.put("gray", GRAY);
-        sColorNameMaps.put("grey", GRAY);
-        sColorNameMaps.put("skyblue", SKYBLUE);
-        sColorNameMaps.put("orange", ORANGE);
-        sColorNameMaps.put("gold", GOLD);
-        sColorNameMaps.put("pink", PINK);
-        sColorNameMaps.put("fuchsia", FUCHSIA);
-        sColorNameMaps.put("graywhite", GRAYWHITE);
-        sColorNameMaps.put("purple", PURPLE);
-        sColorNameMaps.put("cyan", CYAN);
-        sColorNameMaps.put("yellow", YELLOW);
-        sColorNameMaps.put("chocolate", CHOCOLATE);
-        sColorNameMaps.put("tomato", TOMATO);
-        sColorNameMaps.put("orangered", ORANGERED);
-        sColorNameMaps.put("silver", SILVER);
-        sColorNameMaps.put("darkgray", DKGRAY);
-        sColorNameMaps.put("lightgray", LTGRAY);
-        sColorNameMaps.put("lightgrey", LTGRAY);
-        sColorNameMaps.put("magenta", MAGENTA);
-        sColorNameMaps.put("highlight", HIGHLIGHT);
-        sColorNameMaps.put("lowlight", LOWLIGHT);
-        sColorNameMaps.put("aqua", 0xFF00FFFF);
-        sColorNameMaps.put("lime", 0xFF00FF00);
-        sColorNameMaps.put("maroon", 0xFF800000);
-        sColorNameMaps.put("navy", 0xFF000080);
-        sColorNameMaps.put("olive", 0xFF808000);
-        sColorNameMaps.put("teal", 0xFF008080);
     }
 
     private ColorUtils() {
@@ -186,7 +76,6 @@ public final class ColorUtils {
     public static int alpha(final int color) {
         return color >>> 24;
     }
-
 
     /**
      * 返回一个颜色中的透明度百分比值
@@ -515,11 +404,6 @@ public final class ColorUtils {
                 throw new IllegalArgumentException("Unknown color");
             }
             return (int) color;
-        } else {
-            Integer color = sColorNameMaps.get(colorStr.toLowerCase(Locale.ROOT));
-            if (color != null) {
-                return color;
-            }
         }
         throw new IllegalArgumentException("Unknown color");
     }
@@ -531,7 +415,6 @@ public final class ColorUtils {
      *     支持的格式:
      *     #RRGGBB
      *     #AARRGGBB
-     *     'red', 'blue', 'green', 'black', 'white', 'gray', 'cyan', 'magenta', 'yellow', 'lightgray', 'darkgray'
      * </pre>
      *
      * @param colorStr argb/rgb color String
