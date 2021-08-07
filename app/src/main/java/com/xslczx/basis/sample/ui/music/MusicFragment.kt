@@ -59,7 +59,11 @@ class MusicFragment : Fragment() {
         viewBinding.progressCircular.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 takeIf { fromUser }?.let {
-                    playerManager.seekTo(100 * playerManager.duration / progress)
+                    val i = playerManager.duration * progress / 100
+                    playerManager.pause()
+                    LogUtils.d("seekTo:$i")
+                    playerManager.seekTo(i)
+                    playerManager.resume()
                 }
             }
 
@@ -148,13 +152,11 @@ class MusicFragment : Fragment() {
 
             override fun onBufferingUpdate(mediaPlayer: MediaPlayer?, progress: Int) {
                 super.onBufferingUpdate(mediaPlayer, progress)
-                LogUtils.d("onBufferingUpdate:$progress")
                 viewBinding.progressCircular.secondaryProgress = progress
             }
 
             override fun onPlayProgress(progress: Int) {
                 super.onPlayProgress(progress)
-                LogUtils.d("onPlayProgress:$progress")
                 viewBinding.progressCircular.progress = progress
             }
 

@@ -35,19 +35,6 @@ public class PlayerManager {
     //多久获取一次进度 默认500毫秒
     private int mInterval = 500;
     private int mLastPercent;
-    private final Runnable mRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (mOnPlayInfoListener != null && mMediaPlayer != null && isPlaying()) {
-                int playPercent = getPlayPercent();
-                if (mLastPercent != playPercent) {
-                    mLastPercent = playPercent;
-                    mOnPlayInfoListener.onPlayProgress(playPercent);
-                }
-            }
-            mHandler.postDelayed(mRunnable, mInterval);
-        }
-    };
     private final Handler mHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
@@ -65,6 +52,19 @@ public class PlayerManager {
             return false;
         }
     });
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mOnPlayInfoListener != null && mMediaPlayer != null && isPlaying()) {
+                int playPercent = getPlayPercent();
+                if (mLastPercent != playPercent) {
+                    mLastPercent = playPercent;
+                    mOnPlayInfoListener.onPlayProgress(playPercent);
+                }
+            }
+            mHandler.postDelayed(mRunnable, mInterval);
+        }
+    };
     private boolean mLooping = false;
     private boolean mKeepScreenOn = false;
     private float mLeftVolume = 1F, mRightVolume = 1F;
@@ -153,7 +153,12 @@ public class PlayerManager {
             mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
-                    stop();
+                    PlayerManager.this.isPlaying = false;
+                    PlayerManager.this.duration = 0;
+                    Message message = new Message();
+                    message.what = IS_PLAY_STOP;
+                    mHandler.sendMessage(message);
+                    mediaPlayer.stop();
                     if (mOnPlayInfoListener != null) {
                         mOnPlayInfoListener.onCompletion(mediaPlayer);
                     }
@@ -189,13 +194,14 @@ public class PlayerManager {
                 @Override
                 public boolean onError(MediaPlayer mp, int what, int extra) {
                     if (isIgnoreWhat(what)) {
+                        LogUtils.w("isIgnoreError:" + what);
+                        if (mMediaPlayer != null) {
+                            stop();
+                        }
                         return true;
                     }
                     if (mOnPlayInfoListener != null) {
                         mOnPlayInfoListener.onError(mp, what, extra);
-                    }
-                    if (mMediaPlayer != null) {
-                        stop();
                     }
                     mHandler.removeCallbacks(mRunnable);
                     return false;
@@ -375,7 +381,12 @@ public class PlayerManager {
      */
     public void seekTo(int msec) {
         if (mMediaPlayer != null) {
-            mMediaPlayer.seekTo(msec);
+            int duration = getDuration();
+            if (msec > duration) {
+                LogUtils.w("seekTo " + msec + ",duration :" + duration);
+            } else {
+                mMediaPlayer.seekTo(msec);
+            }
         }
     }
 
