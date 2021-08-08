@@ -31,6 +31,20 @@ class MainFragment : Fragment() {
                 this?.showFragment(MainActivity.FRAGMENT_MUSIC, args)
             }
         }
+        viewBinding.btnRecord.setOnClickListener {
+            val mainActivity = (mActivity as? MainActivity) ?: return@setOnClickListener
+            PermissionUtils.permission(Manifest.permission.RECORD_AUDIO)
+                .callback(object : PermissionUtils.PermissionCallback {
+                    override fun onGranted() {
+                        mainActivity.showFragment(MainActivity.FRAGMENT_RECORD, null)
+                    }
+
+                    override fun onDenied(grantedList: MutableList<String>?, deniedList: MutableList<String>?) {
+                    }
+
+                })
+                .request(mainActivity)
+        }
         PermissionUtils.permission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             .callback(object : PermissionUtils.PermissionCallback {
                 override fun onGranted() {

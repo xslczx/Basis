@@ -7,9 +7,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
-import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.xslczx.basis.sample.databinding.ActivityMainBinding
 import com.xslczx.basis.sample.ui.music.MusicFragment
+import com.xslczx.basis.sample.ui.record.RecordFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG_FRAGMENT_NAME = "fragment_name"
         const val FRAGMENT_MUSIC = "fragment_music"
         const val FRAGMENT_MAIN = "fragment_main"
+        const val FRAGMENT_RECORD = "fragment_record"
         const val FRAGMENT_BANNED = "banned"
     }
 
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
                 FRAGMENT_MUSIC -> fragment = MusicFragment().also {
                     it.arguments = args
                 }
+                FRAGMENT_RECORD -> fragment = RecordFragment()
                 else -> throw IllegalArgumentException("Failed to create fragment: unknown tag $tag")
             }
         }
@@ -71,6 +73,6 @@ class MainActivity : AppCompatActivity() {
         trx.replace(R.id.contentFragment, fragment, tag)
             .addToBackStack(tag)
             .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .commit()
+            .commitAllowingStateLoss()
     }
 }

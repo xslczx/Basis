@@ -7,6 +7,7 @@ import android.view.*
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.Picasso
@@ -21,6 +22,8 @@ import com.xslczx.basis.sample.R
 import com.xslczx.basis.sample.adapter.SelectMode
 import com.xslczx.basis.sample.adapter.SpaceItemDecoration
 import com.xslczx.basis.sample.databinding.FragmentMusicBinding
+import com.xslczx.basis.sample.layer.GlobalConfig
+import com.xslczx.basis.sample.layer.notify.NotificationLayer
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -289,6 +292,16 @@ class MusicFragment : Fragment() {
             .setLooping(false)
             .setScreenOnWhilePlaying(true)
             .start()
+        val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_logo)
+        val zoomDrawableImage = ZoomDrawable.zoomDrawableImage(drawable!!, false, 72f, 72f, null, null)
+        GlobalConfig.get().notificationTimePattern = "HH:mm"
+        GlobalConfig.get().notificationIcon = zoomDrawableImage
+        GlobalConfig.get().notificationLabel = getString(R.string.app_name)
+        NotificationLayer(requireActivity())
+            .title("开始播放")
+            .desc(music.title)
+            .onNotificationClick { layer, view -> layer.dismiss() }
+            .show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
