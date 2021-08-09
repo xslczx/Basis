@@ -22,14 +22,13 @@ import com.xslczx.basis.sample.R
 import com.xslczx.basis.sample.adapter.SelectMode
 import com.xslczx.basis.sample.adapter.SpaceItemDecoration
 import com.xslczx.basis.sample.databinding.FragmentMusicBinding
-import com.xslczx.basis.sample.layer.GlobalConfig
-import com.xslczx.basis.sample.layer.notify.NotificationLayer
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import per.goweii.anylayer.GlobalConfig
+import per.goweii.anylayer.notification.NotificationLayer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-
 
 class MusicFragment : Fragment() {
 

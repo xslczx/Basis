@@ -2,6 +2,7 @@ package com.xslczx.basis.sample.ui.record
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,21 +12,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
-import com.xslczx.basis.android.LogUtils
-import com.xslczx.basis.android.RecordManager
+import com.xslczx.basis.android.AppBasis
 import com.xslczx.basis.sample.R
 import com.xslczx.basis.sample.databinding.FragmentRecordBinding
-import com.xslczx.basis.sample.layer.FloatLayer
+import github.hotstu.lame4droid.LameMp3Manager
+import github.hotstu.lame4droid.RecorderListener
+import per.goweii.anylayer.floats.FloatLayer
+import java.io.File
 
 class RecordFragment : Fragment() {
 
     private lateinit var viewBinding: FragmentRecordBinding
     private var floatLayer: FloatLayer? = null
-    private val recordManager by lazy {
-        RecordManager.Builder()
-            .build()
-    }
-
+    private var recording = false
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewBinding = FragmentRecordBinding.inflate(inflater)
         return viewBinding.root
@@ -42,47 +41,42 @@ class RecordFragment : Fragment() {
             }
         }
         viewBinding.btnRecord.setOnClickListener {
-            val recording = recordManager.isRecording
             if (recording) {
-                recordManager.stop()
+                recording = false
+                LameMp3Manager.INSTANCE.stopRecorder()
+                viewBinding.btnRecord.text = "开始录制"
             } else {
-                recordManager.start()
+                recording = true
+                val externalFilesDir = AppBasis.getApp().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                LameMp3Manager.INSTANCE.startRecorder(
+                    File(
+                        externalFilesDir,
+                        "${System.currentTimeMillis()}.mp3"
+                    ).absolutePath
+                )
+                viewBinding.btnRecord.text = "结束录制"
+                LameMp3Manager.INSTANCE.setRecorderListener(object : RecorderListener {
+                    override fun onVolume(volume: Int) {
+                    }
+
+                    override fun onFinish(mp3SavePath: String?) {
+                        Toast.makeText(AppBasis.getApp(), mp3SavePath, Toast.LENGTH_SHORT).show()
+                    }
+
+                })
             }
         }
-        recordManager.setMaximum(30)
-        recordManager.setMediaRecorderCallBack(object : RecordManager.MediaRecorderCallBackImpl() {
-            override fun onProcess(second: Int) {
-                super.onProcess(second)
-                LogUtils.d("onProcess $second")
-            }
-
-            override fun onDecibel(decibel: Int) {
-                super.onDecibel(decibel)
-                LogUtils.d("onDecibel $decibel")
-            }
-
-            override fun onStarted() {
-                super.onStarted()
-                LogUtils.d("onStopped " + recordManager.path)
-            }
-
-            override fun onStopped() {
-                super.onStopped()
-                LogUtils.d("onStopped " + recordManager.path)
-            }
-
-        })
         showFloat()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         dismissFloat()
+        LameMp3Manager.INSTANCE.stopRecorder()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        recordManager.release()
     }
 
     private fun showFloat() {
