@@ -1,6 +1,9 @@
 package com.xslczx.basis.sample.ui.record
 
 import android.graphics.Color
+import android.media.AudioFormat
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
@@ -13,10 +16,15 @@ import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import com.xslczx.basis.android.AppBasis
+import com.xslczx.basis.android.LogUtils
+import com.xslczx.basis.android.PlayerManager
+import com.xslczx.basis.android.audio.AudioRecordConfig
+import com.xslczx.basis.android.audio.BasisRecorder
+import com.xslczx.basis.android.audio.PullTransport
+import com.xslczx.basis.android.audio.Recorder
 import com.xslczx.basis.sample.R
 import com.xslczx.basis.sample.databinding.FragmentRecordBinding
 import github.hotstu.lame4droid.LameMp3Manager
-import github.hotstu.lame4droid.RecorderListener
 import per.goweii.anylayer.floats.FloatLayer
 import java.io.File
 
@@ -25,6 +33,8 @@ class RecordFragment : Fragment() {
     private lateinit var viewBinding: FragmentRecordBinding
     private var floatLayer: FloatLayer? = null
     private var recording = false
+    private var audioFile: File? = null
+    private val playerManager by lazy { PlayerManager() }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewBinding = FragmentRecordBinding.inflate(inflater)
         return viewBinding.root
@@ -43,31 +53,48 @@ class RecordFragment : Fragment() {
         viewBinding.btnRecord.setOnClickListener {
             if (recording) {
                 recording = false
-                LameMp3Manager.INSTANCE.stopRecorder()
                 viewBinding.btnRecord.text = "开始录制"
+                recorder?.stopRecording()
+                playerManager.apply {
+                    setPlayFile(audioFile)
+                    start()
+                    setOnPlayInfoListener(object : PlayerManager.OnPlayInfoListenerImpl() {
+                        override fun onCompletion(mediaPlayer: MediaPlayer?) {
+                            super.onCompletion(mediaPlayer)
+                            setPlayFile(audioFile)
+                            start()
+                        }
+                    })
+                }
             } else {
+                playerManager.stop()
                 recording = true
-                val externalFilesDir = AppBasis.getApp().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-                LameMp3Manager.INSTANCE.startRecorder(
-                    File(
-                        externalFilesDir,
-                        "${System.currentTimeMillis()}.mp3"
-                    ).absolutePath
-                )
                 viewBinding.btnRecord.text = "结束录制"
-                LameMp3Manager.INSTANCE.setRecorderListener(object : RecorderListener {
-                    override fun onVolume(volume: Int) {
-                    }
-
-                    override fun onFinish(mp3SavePath: String?) {
-                        Toast.makeText(AppBasis.getApp(), mp3SavePath, Toast.LENGTH_SHORT).show()
-                    }
-
-                })
+                audioFile = File(
+                    AppBasis.getApp().getExternalFilesDir(Environment.DIRECTORY_MUSIC),
+                    "${System.currentTimeMillis()}.wav"
+                )
+                recorder = BasisRecorder.wav(
+                    audioFile,
+                    AudioRecordConfig(
+                        MediaRecorder.AudioSource.MIC,
+                        16000,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT
+                    ),
+                    PullTransport.Noise()
+                        .setOnAudioChunkPulledListener {
+                            LogUtils.d("maxAmplitude:${it.maxAmplitude()}")
+                            val mp3Buffer = it.toBytes()
+                        }
+                )
+                recorder?.startRecording()
             }
         }
         showFloat()
     }
+
+    private var recorder: Recorder? = null
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -77,6 +104,7 @@ class RecordFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
+        playerManager.release()
     }
 
     private fun showFloat() {
